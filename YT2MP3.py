@@ -7,9 +7,12 @@ import asyncio
 from shazamio import Shazam
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError, TIT2, TALB, TPE1, APIC, TXXX
+import time
 
 # Function to download audio from YouTube URL using yt-dlp
 def download_audio(url):
+    # Use a timestamp to create a unique file name
+    timestamp = int(time.time())
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -17,11 +20,11 @@ def download_audio(url):
             'preferredcodec': 'mp3',
             'preferredquality': '320',
         }],
-        'outtmpl': 'downloaded_audio.%(ext)s'
+        'outtmpl': f'downloaded_audio_{timestamp}.%(ext)s'
     }
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
-        audio_file = 'downloaded_audio.mp3'
+        audio_file = f'downloaded_audio_{timestamp}.mp3'
     return audio_file
 
 # Function to analyze the tempo and key of the audio file
@@ -49,16 +52,18 @@ def get_key_from_chroma(chroma_vector):
 
 # Function to save the audio file in the desired format
 def save_audio(input_file, output_format='mp3'):
-    # Ensure the Downloads directory exists
-    downloads_dir = os.path.expanduser("~/Downloads")
-    if not os.path.exists(downloads_dir):
-        os.makedirs(downloads_dir)  # Create the Downloads directory if it doesn't exist
+    # Ensure the Library directory exists in the script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    library_dir = os.path.join(script_dir, "Library")
+    if not os.path.exists(library_dir):
+        os.makedirs(library_dir)  # Create the Library directory if it doesn't exist
 
     # Load the audio file using pydub
     audio = AudioSegment.from_file(input_file)
     
-    # Output path
-    output_path = os.path.join(downloads_dir, f"downloaded_audio.{output_format}")
+    # Output path with a timestamp to ensure uniqueness
+    timestamp = int(time.time())
+    output_path = os.path.join(library_dir, f"downloaded_audio_{timestamp}.{output_format}")
     
     # Save the file as MP3 or WAV
     if output_format == 'mp3':
@@ -129,12 +134,18 @@ def add_metadata_to_audio(output_path, song_info, tempo, key):
     # Save the changes to the original file
     audio.save(output_path)
 
+    # Create the directory structure: Library/Artist/Album
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    library_dir = os.path.join(script_dir, "Library", artist, album)
+    if not os.path.exists(library_dir):
+        os.makedirs(library_dir)  # Create the directories if they don't exist
+
     # Rename the file to the song title (replace spaces with underscores)
     safe_title = title.replace(" ", "_")  # Replace spaces with underscores
     new_file_name = f"{safe_title}.mp3"
-    new_file_path = os.path.join(os.path.dirname(output_path), new_file_name)
+    new_file_path = os.path.join(library_dir, new_file_name)
 
-    # Rename the file to the new name
+    # Move the file to the new location
     os.rename(output_path, new_file_path)
 
     # Print the success message with title and artist
