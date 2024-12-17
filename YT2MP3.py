@@ -169,14 +169,11 @@ if __name__ == "__main__":
         musical_key = get_key_from_chroma(chroma)
         print(f"Key (Musical): {musical_key}")
         
-        # Step 3: Ask user to save in high-quality MP3 or WAV
-        save_format = input("Do you want to save the file as MP3 or WAV? (mp3/wav): ").lower()
-        output_path = save_audio(downloaded_audio, output_format=save_format)
-        #print(f"Audio saved to: {output_path}") ------
-
+        # Step 3: Save the file automatically as MP3
+        output_path = save_audio(downloaded_audio, output_format='mp3')
+        
         song_info = asyncio.run(get_song_info(output_path))
-        #print(f"Song information: {song_info} - saved to {output_path} file metadata.")
-
+        
         new_file_path = add_metadata_to_audio(output_path, song_info, tempo, musical_key)
         print(f"Audio, information, and cover photo saved to: {new_file_path}")
     
